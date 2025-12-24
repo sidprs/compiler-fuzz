@@ -33,7 +33,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <stack>
-
+#include <vector>
 namespace SESH {
   enum class Event{
     START, PAGE, CLICK, PURCHASE, END
@@ -56,11 +56,12 @@ struct Event{
 };
 
 struct Meta{
-  double timestamp_ms;
+  // hours, minutes
+  std::pair<double, double> timestamp_ms;
   int user_id;
   int session_id;
-  std::vector<int> linNo_;
-  std::map<int, std::vector<std::vector<int>>> LogInts_;
+  int linNo_;
+  std::map<int, std::vector<int>> LogInts_;
   
 };
 
@@ -99,10 +100,11 @@ class Log{
     std::cout << "here" << std::endl;
     size_t position = 0;
     char complement;
-    if (search_value != '[' && search_value != '<') return code::LOG_1;
     if (search_value == '[')  complement = ']';
-    if (search_value == '<')  complement = '>';
-        
+    else if (search_value == '<')  complement = '>';
+    else if (search_value == '{')  complement = '}';
+    else if (search_value == '<')  complement = '>';
+    else { return code::READ_1;}
         while(position < content.size()){
               auto left_bound = content.find(search_value, position);
               if(left_bound == std::string::npos) break;
@@ -113,16 +115,48 @@ class Log{
               std::vector<int>segments; int x;
               while(ss >> x ) segments.push_back(x);
               int start_line = line_no[left_bound];
+              // Classify in here ? 
+              //Classify(search_value, start_line, segments);
               LogInts_[start_line].push_back(segments);
               position = right_bound + 1;
-        }
+      }
+      // timestamp  []
+      // user_id    <>
+      // session_id {}
+      // linNo      
+      // LogInts_   Hits
       return code::LOG_0;
   }   
 
+  SESH::Code Classify(const char& search_value, int start_line, std::vector<int>& segments){
+    // append to MetaList_ then can chose to convert this to MetaRing (circular queue)
+    Meta node;
+    node.linNo_ = start_line;
+    node.LogInts_.emplace(start_line, std::move(segments));
+   // moves (segments becomes empty/valid)
 
 
+    switch( search_value ) { 
+      case('['):
+        // std::pair < hour, minutes >
+        node.timestamp_ms = {0.0, 0.0};
+
+        break;
+      case('<'):
+        // userId (classify the ID )
+        break;
+      case('{'):
+        // sessionId  
+        break;
+      default:
+        std::cout << "Error Search Value" << std::endl;
+        return code::WRITE_1; 
+    }
+    MetaList_.push_back(node);
+
+  }
   
- void Print() {
+  void Print() {
     for(const auto& [line_num, list_of_lists] : LogInts_) {
         for(const auto& values : list_of_lists) {
             std::cout << "[ ";
@@ -134,6 +168,8 @@ class Log{
         std::cout << "[line " << line_num << "]\n";
     }
   }
+
+
   std::map<int, std::vector<std::vector<int>>> getLogMap(){
     return LogInts_;
   }
@@ -143,6 +179,8 @@ class Log{
     std::vector<std::string> LogData_;
     std::map<int, std::vector<std::vector<int>>> LogInts_;
     
+    std::vector<Meta> MetaList_;
+
     void clearData(){
       LogInts_.clear();
     }
@@ -160,6 +198,7 @@ class MetaRing{
       }
       Ring_ = new Meta[capacity_];
     }
+
     /*
       double timestamp_ms;
       int user_id;
@@ -199,24 +238,3 @@ class MetaRing{
     size_t head_;
     size_t capacity_;
 };
-
-int main(int argc, char *argv[]) {
-  if (argc < 3) {
-    std::cerr << "Usage: ./log <file> <search_value> \n";
-    return 1;
-  }
-
-  std::string filename = argv[1];
-  char search_value = *argv[2];
-
-  std::cout << search_value << std::endl;
-
-  std::cout << filename << std::endl;
-  Log logger(filename);
-  logger.LogFileParser(search_value);
-  logger.Print();
-
-  //
-
-  return 0;
-}

@@ -1,0 +1,12 @@
+struct Meta{
+  double timestamp_ms;
+  int user_id;
+  int session_id;
+  std::vector<int> linNo_;
+  std::map<int, std::vector<std::vector<int>>> LogInts_;
+  
+};
+
+
+user_id starts withg :wq
+
