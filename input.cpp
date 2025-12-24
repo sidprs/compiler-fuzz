@@ -9,11 +9,8 @@ IO::IO(size_t cap, size_t inst, std::string filename_) :instance_(inst),capacity
 }
 
 
-void IO::Tokenize(){
-    
-}
 
-TokenType charToToken(char c, char next) {
+IO::TokenType charToToken(char c, char next) {
     switch (c) {
         case '+':
             if (next == '+') return TOKEN_PLUS_PLUS;
