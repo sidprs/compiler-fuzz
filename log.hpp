@@ -116,10 +116,19 @@ class Log{
               while(ss >> x ) segments.push_back(x);
               int start_line = line_no[left_bound];
               // Classify in here ? 
-              //Classify(search_value, start_line, segments);
+              //Classify(content, search_value, start_line, segments);
               LogInts_[start_line].push_back(segments);
               position = right_bound + 1;
       }
+      // for (const auto& meta : MetaList_) {
+      // printf("Timestamp: %02.0f:%02.0f | User ID: %d | Session ID: %d\n",
+      //       meta.timestamp_ms.first,
+      //       meta.timestamp_ms.second,
+      //       meta.user_id,
+      //       meta.session_id);
+
+
+  
       // timestamp  []
       // user_id    <>
       // session_id {}
@@ -136,12 +145,13 @@ class Log{
   }
   static std::optional<std::pair<int,int>> parse_hhmm(std::string_view raw) {
     raw = trim(raw);
+    //std::cout << "raw: " << raw << std::endl;
     if (!raw.empty() && raw.front() == '[') raw.remove_prefix(1);
     raw = trim(raw);
     if (!raw.empty() && raw.back() == ']') raw.remove_suffix(1);
     raw = trim(raw);
     
-    auto pos = raw.find(':');
+    auto pos = raw.find(' ');
     auto hstr = trim(raw.substr(0, pos));
     auto mstr = trim(raw.substr(pos + 1));
 
@@ -167,12 +177,14 @@ class Log{
     node.LogInts_.emplace(start_line, std::move(segments));
    // moves (segments becomes empty/valid)
     switch( search_value ) { 
-      case('['):
+      case('['): {
         auto t = parse_hhmm(content);
         if (!t) return code::WRITE_1; 
         node.timestamp_ms.first  = (double)t->first;  // hours
         node.timestamp_ms.second = (double)t->second; // minutes
+
         break;
+      }
       case('<'):
         // userId (classify the ID )
         break;

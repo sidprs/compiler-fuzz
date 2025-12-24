@@ -18,7 +18,8 @@ int main(int argc, char *argv[]) {
   Log logger(filename);
   logger.LogFileParser(search_value);
   logger.Print();
-  
+
+
   MetaRing(4);
 
   //
