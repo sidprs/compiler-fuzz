@@ -138,7 +138,8 @@ using TokenList = std::vector<Token>;
 class IO{
     public:
         explicit IO(size_t cap, size_t inst, std::string filename_);
-        TokenList Tokenize();
+        TokenType charToToken(char c, char next);
+
 
 
     private:
