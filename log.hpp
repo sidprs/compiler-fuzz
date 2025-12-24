@@ -128,19 +128,50 @@ class Log{
       return code::LOG_0;
   }   
 
-  SESH::Code Classify(const char& search_value, int start_line, std::vector<int>& segments){
+
+  static std::string_view trim(std::string_view s){
+    while (!s.empty() && std::isspace((unsigned char)s.front())) s.remove_prefix(1);
+    while (!s.empty() && std::isspace((unsigned char)s.back()))  s.remove_suffix(1);
+    return s;
+  }
+  static std::optional<std::pair<int,int>> parse_hhmm(std::string_view raw) {
+    raw = trim(raw);
+    if (!raw.empty() && raw.front() == '[') raw.remove_prefix(1);
+    raw = trim(raw);
+    if (!raw.empty() && raw.back() == ']') raw.remove_suffix(1);
+    raw = trim(raw);
+    
+    auto pos = raw.find(':');
+    auto hstr = trim(raw.substr(0, pos));
+    auto mstr = trim(raw.substr(pos + 1));
+
+    if (hstr.empty() || hstr.size() > 2) return std::nullopt;
+    if (mstr.size() != 2) return std::nullopt;
+    for (char c : hstr) if (!std::isdigit((unsigned char)c)) return std::nullopt;
+    for (char c : mstr) if (!std::isdigit((unsigned char)c)) return std::nullopt;
+
+    int hh = std::stoi(std::string(hstr));
+    int mm = std::stoi(std::string(mstr));
+    if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return std::nullopt;
+
+    return std::make_pair(hh, mm);
+
+
+  }
+
+
+  SESH::Code Classify(const std::string& content, const char& search_value, int start_line, std::vector<int>& segments){
     // append to MetaList_ then can chose to convert this to MetaRing (circular queue)
     Meta node;
     node.linNo_ = start_line;
     node.LogInts_.emplace(start_line, std::move(segments));
    // moves (segments becomes empty/valid)
-
-
     switch( search_value ) { 
       case('['):
-        // std::pair < hour, minutes >
-        node.timestamp_ms = {0.0, 0.0};
-
+        auto t = parse_hhmm(content);
+        if (!t) return code::WRITE_1; 
+        node.timestamp_ms.first  = (double)t->first;  // hours
+        node.timestamp_ms.second = (double)t->second; // minutes
         break;
       case('<'):
         // userId (classify the ID )
